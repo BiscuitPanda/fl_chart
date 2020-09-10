@@ -11,14 +11,15 @@ import 'line_chart_painter.dart';
 class LineChart extends ImplicitlyAnimatedWidget {
   /// Determines how the [LineChart] should be look like.
   final LineChartData data;
-
+  ///初始化默认展示弹窗内容
+  final List<LineBarSpot> showingSpots;
   /// [data] determines how the [LineChart] should be look like,
   /// when you make any change in the [LineChartData], it updates
   /// new values with animation, and duration is [swapAnimationDuration].
   const LineChart(
-    this.data, {
-    Duration swapAnimationDuration = const Duration(milliseconds: 150),
-  }) : super(duration: swapAnimationDuration);
+      this.data, this.showingSpots,{
+        Duration swapAnimationDuration = const Duration(milliseconds: 150),
+      }) : super(duration: swapAnimationDuration);
 
   /// Creates a [_LineChartState]
   @override
@@ -37,6 +38,37 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
   final List<ShowingTooltipIndicators> _showingTouchedTooltips = [];
 
   final Map<int, List<int>> _showingTouchedIndicators = {};
+  @override
+  void initState() {
+    super.initState();
+    ///至少有一条曲线数据
+    if(widget.showingSpots?.length>0){
+      _showingTouchedTooltips.add(ShowingTooltipIndicators(0, widget.showingSpots));
+      for(int k=0;k< widget.showingSpots.length;k++){
+        final touchedBarSpot = widget.showingSpots[k];
+        final barPos = touchedBarSpot.barIndex;
+        _showingTouchedIndicators[barPos] = [touchedBarSpot.spotIndex];
+      }
+    }
+
+  }
+  @override
+  void didUpdateWidget(LineChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    setState(() {
+      ///至少有一条曲线数据
+      if(widget.showingSpots?.length>0){
+        _showingTouchedTooltips.clear();
+        _showingTouchedIndicators.clear();
+        _showingTouchedTooltips.add(ShowingTooltipIndicators(0, widget.showingSpots));
+        for(int k=0;k< widget.showingSpots.length;k++){
+          final touchedBarSpot = widget.showingSpots[k];
+          final barPos = touchedBarSpot.barIndex;
+          _showingTouchedIndicators[barPos] = [touchedBarSpot.spotIndex];
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +83,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         }
 
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlLongPressStart(d.localPosition), chartSize);
+        _touchHandler?.handleTouch(FlLongPressStart(d.localPosition), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -63,7 +95,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         }
 
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlLongPressEnd(d.localPosition), chartSize);
+        _touchHandler?.handleTouch(FlLongPressEnd(d.localPosition), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -73,9 +105,8 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         if (chartSize == null) {
           return;
         }
-
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlLongPressMoveUpdate(d.localPosition), chartSize);
+        _touchHandler?.handleTouch(FlLongPressMoveUpdate(d.localPosition), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -99,7 +130,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         }
 
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlPanEnd(Offset.zero, details.velocity), chartSize);
+        _touchHandler?.handleTouch(FlPanEnd(Offset.zero, details.velocity), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -111,7 +142,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         }
 
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlPanStart(details.localPosition), chartSize);
+        _touchHandler?.handleTouch(FlPanStart(details.localPosition), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -123,7 +154,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         }
 
         final LineTouchResponse response =
-            _touchHandler?.handleTouch(FlPanMoveUpdate(details.localPosition), chartSize);
+        _touchHandler?.handleTouch(FlPanMoveUpdate(details.localPosition), chartSize);
         if (_canHandleTouch(response, touchData)) {
           touchData.touchCallback(response);
         }
@@ -133,10 +164,10 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         size: getDefaultSize(MediaQuery.of(context).size),
         painter: LineChartPainter(_withTouchedIndicators(_lineChartDataTween.evaluate(animation)),
             _withTouchedIndicators(showingData), (touchHandler) {
-          setState(() {
-            _touchHandler = touchHandler;
-          });
-        }, textScale: MediaQuery.of(context).textScaleFactor),
+              setState(() {
+                _touchHandler = touchHandler;
+              });
+            }, textScale: MediaQuery.of(context).textScaleFactor),
       ),
     );
   }
@@ -207,10 +238,10 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         _showingTouchedTooltips.add(ShowingTooltipIndicators(0, sortedLineSpots));
       });
     } else {
-      setState(() {
-        _showingTouchedTooltips.clear();
-        _showingTouchedIndicators.clear();
-      });
+//      setState(() {
+//        _showingTouchedTooltips.clear();
+//        _showingTouchedIndicators.clear();
+//      });
     }
   }
 
@@ -219,7 +250,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
     _lineChartDataTween = visitor(
       _lineChartDataTween,
       _getData(),
-      (dynamic value) => LineChartDataTween(begin: value),
+          (dynamic value) => LineChartDataTween(begin: value),
     );
   }
 }
